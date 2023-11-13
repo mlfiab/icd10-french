@@ -32,13 +32,13 @@ def parse_args():
         default=None, 
     )
     
-    # parser.add_argument(
-    # "--model",
-    # type=str,
-    # help="The type of model",
-    # required=True,
-    # choices=["bert", "roberta", "longformer"]
-    # )
+    parser.add_argument(
+    "--model_type",
+    type=str,
+    help="The type of model",
+    default="camem-laat",
+    choices=["laat", "camem-laat", "hier_mean", "hier_mean", "trunc-bert"]
+    )
     
     args = parser.parse_args()
     return args
@@ -69,9 +69,9 @@ if __name__ == '__main__':
 
         # Replace all extra codes by other tag
         dataset_icd_10_labels, unique_icd_10_list = replace_no_common_tag(dataset_icd_10_labels, unique_icd_10_list)
-    except Exception as e :
+    except Exception as e:
         print(e)
-
+        pass
     labels = transform_label(unique_icd_10_list, dataset_icd_10_labels)
     nb_classes = len(labels[1])
     print("LABELS : => ", nb_classes)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     data = data[data['text'].notnull()]
 
     TRAIN_BATCH_SIZE=4
-    EPOCH=2 #[5,10,20,30]
+    EPOCH=30 #[5,10,20,30]
     validation_split = .2
     shuffle_dataset = True
     random_seed= 42
@@ -101,106 +101,106 @@ if __name__ == '__main__':
     # MODEL_NAME = 'camembert-base joeddav/xlm-roberta-large-xnli' #'flaubert/flaubert_base_cased flaubert/flaubert_small_cased'
         
 
-    architectures = ['camembert-laat'] # [hierarchical_mean/max, laat, truncated-bert, ]
+    #architectures = ['camembert-laat'] # [hierarchical_mean/max, laat, truncated-bert, ]
     model = None
     trunc = 0
     MAX_CHUNK = 30
     MODEL_NAME = ""
-    for index, arch in enumerate(architectures) :
-        print(arch)
-        if arch == 'camembert-laat':
-            MODEL_NAME = 'camembert-base'
-            hidden = 768
-            model = BERT_Hierarchical_Model_Laat(nb_classes, MODEL_NAME, hidden).to(device)
-        if arch == 'laat': #FlauBERT
-            hidden = 512
-            MODEL_NAME = 'flaubert/flaubert_small_cased'
-            model = BERT_Hierarchical_Model_Laat(nb_classes, MODEL_NAME, hidden).to(device)
-        if len(arch.split('_')) == 2:
-            MODEL_NAME = 'flaubert/flaubert_small_cased'
-            _, pooling_method = arch.split('_')
-            model=BERT_Hierarchical_Model(pooling_method, nb_classes, MODEL_NAME).to(device)
-        if arch == "truncated-bert":
-            trunc = 1
-            MODEL_NAME = 'flaubert/flaubert_small_cased'
-            model = FlauBERTClass(nb_classes, MODEL_NAME).to(device)
 
-        print('Loading BERT tokenizer...')
-        bert_tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=False)
-        # DATASET
-        dataset=CustomDocumentDataset(
-        tokenizer=bert_tokenizer,
-        data=data,
-        min_len=MIN_LEN,
-        max_len=MAX_LEN,
-        chunk_len=CHUNK_LEN,
-        truncated = trunc,
-        #max_size_dataset=MAX_SIZE_DATASET,
-        overlap_len=OVERLAP_LEN,
-        max_chunk = MAX_CHUNK)
+    arch = args.model_type
+    if arch == 'camem-laat':
+        MODEL_NAME = 'camembert-base'
+        hidden = 768
+        model = BERT_Hierarchical_Model_Laat(nb_classes, MODEL_NAME, hidden).to(device)
+    if arch == 'laat': #FlauBERT
+        hidden = 512
+        MODEL_NAME = 'flaubert/flaubert_small_cased'
+        model = BERT_Hierarchical_Model_Laat(nb_classes, MODEL_NAME, hidden).to(device)
+    if len(arch.split('_')) == 2:
+        MODEL_NAME = 'flaubert/flaubert_small_cased'
+        _, pooling_method = arch.split('_')
+        model=BERT_Hierarchical_Model(pooling_method, nb_classes, MODEL_NAME).to(device)
+    if arch == "trunc-bert":
+        trunc = 1
+        MODEL_NAME = 'flaubert/flaubert_small_cased'
+        model = FlauBERTClass(nb_classes, MODEL_NAME).to(device)
 
-        # Creating data indices for training and validation splits:
-        dataset_size = len(dataset)
-        print(dataset_size)
-        text = dataset.__getitem__(0)
-        indices = list(range(dataset_size))
-        split = int(np.floor(validation_split * dataset_size))
-        if shuffle_dataset :
-            np.random.seed(random_seed)
-            np.random.shuffle(indices)
-        train_indices, val_indices = indices[split:], indices[:split]
+    print('Loading BERT tokenizer...')
+    bert_tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=False)
+    # DATASET
+    dataset=CustomDocumentDataset(
+    tokenizer=bert_tokenizer,
+    data=data,
+    min_len=MIN_LEN,
+    max_len=MAX_LEN,
+    chunk_len=CHUNK_LEN,
+    truncated = trunc,
+    #max_size_dataset=MAX_SIZE_DATASET,
+    overlap_len=OVERLAP_LEN,
+    max_chunk = MAX_CHUNK)
 
-        # Creating PT data samplers and loaders:
-        train_sampler = SubsetRandomSampler(train_indices)
-        valid_sampler = SubsetRandomSampler(val_indices)
+    # Creating data indices for training and validation splits:
+    dataset_size = len(dataset)
+    print(dataset_size)
+    text = dataset.__getitem__(0)
+    indices = list(range(dataset_size))
+    split = int(np.floor(validation_split * dataset_size))
+    if shuffle_dataset :
+        np.random.seed(random_seed)
+        np.random.shuffle(indices)
+    train_indices, val_indices = indices[split:], indices[:split]
 
-        train_data_loader=DataLoader(
-            dataset,
-            batch_size=TRAIN_BATCH_SIZE,
-            sampler=train_sampler,
-            collate_fn=my_collate1,
-            num_workers=2)
+    # Creating PT data samplers and loaders:
+    train_sampler = SubsetRandomSampler(train_indices)
+    valid_sampler = SubsetRandomSampler(val_indices)
 
-        valid_data_loader=DataLoader(
-            dataset,
-            batch_size=TRAIN_BATCH_SIZE,
-            sampler=valid_sampler,
-            collate_fn=my_collate1,
-            num_workers=2)
+    train_data_loader=DataLoader(
+        dataset,
+        batch_size=TRAIN_BATCH_SIZE,
+        sampler=train_sampler,
+        collate_fn=my_collate1,
+        num_workers=2)
 
-        lr=3e-5 #1e-3##
-        #device = 'cpu'
-        num_training_steps=int(len(dataset) / TRAIN_BATCH_SIZE * EPOCH)
+    valid_data_loader=DataLoader(
+        dataset,
+        batch_size=TRAIN_BATCH_SIZE,
+        sampler=valid_sampler,
+        collate_fn=my_collate1,
+        num_workers=2)
 
-        
-        optimizer=AdamW(model.parameters(), lr=lr)
-        scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps = 0,
-                                                num_training_steps = num_training_steps)
-        val_losses=[]
-        batches_losses=[]
-        val_acc=[]
-        print(f"Architecture : {arch} Learning Rate {lr} Batch size {TRAIN_BATCH_SIZE}")
-        save_score = None
+    lr=3e-5 #1e-3##
+    #device = 'cpu'
+    num_training_steps=int(len(dataset) / TRAIN_BATCH_SIZE * EPOCH)
 
-        for epoch in range(EPOCH):
-            t0 = time.time()    
-            print(f"\n=============== EPOCH {epoch+1} / {EPOCH} ===============\n")
+    
+    optimizer=AdamW(model.parameters(), lr=lr)
+    scheduler = get_linear_schedule_with_warmup(optimizer, 
+                                            num_warmup_steps = 0,
+                                            num_training_steps = num_training_steps)
+    val_losses=[]
+    batches_losses=[]
+    val_acc=[]
+    print(f"Architecture : {arch} Learning Rate {lr} Batch size {TRAIN_BATCH_SIZE}")
+    save_score = None
 
-            batches_losses_tmp=rnn_train_loop_fun1(train_data_loader, model, optimizer, device, loss_=loss_fun)
-            epoch_loss=np.mean(batches_losses_tmp)
-        
-            print(f"\n*** avg_loss : {epoch_loss:.2f}, time : ~{(time.time()-t0)//60} min ({time.time()-t0:.2f} sec) ***\n")
-            t1=time.time()
-            #val_acc.append(tmp_evaluate['accuracy'])
-            output, target, val_losses_tmp=rnn_eval_loop_fun1(valid_data_loader, model, device, loss_=loss_fun)
-            val_losses.append(val_losses_tmp)
-            batches_losses.append(batches_losses_tmp)
+    for epoch in range(EPOCH):
+        t0 = time.time()    
+        print(f"\n=============== EPOCH {epoch+1} / {EPOCH} ===============\n")
 
-        
-            print(f"==> evaluation : avg_loss = {np.mean(val_losses_tmp):.2f}, time : {time.time()-t1:.2f} sec\n")
-            #save_score = f"model__epoch{epoch+1}_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.txt" 
-            tmp_evaluate=evaluate(target, output, save_score)
-            print(f"=====>\t{tmp_evaluate}")
-        print("\t§§ the Model has been saved §§")
-        torch.save(model, f"model_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.pt")
+        batches_losses_tmp=rnn_train_loop_fun1(train_data_loader, model, optimizer, device, loss_=loss_fun)
+        epoch_loss=np.mean(batches_losses_tmp)
+    
+        print(f"\n*** avg_loss : {epoch_loss:.2f}, time : ~{(time.time()-t0)//60} min ({time.time()-t0:.2f} sec) ***\n")
+        t1=time.time()
+        #val_acc.append(tmp_evaluate['accuracy'])
+        output, target, val_losses_tmp=rnn_eval_loop_fun1(valid_data_loader, model, device, loss_=loss_fun)
+        val_losses.append(val_losses_tmp)
+        batches_losses.append(batches_losses_tmp)
+
+    
+        print(f"==> evaluation : avg_loss = {np.mean(val_losses_tmp):.2f}, time : {time.time()-t1:.2f} sec\n")
+        #save_score = f"model__epoch{epoch+1}_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.txt" 
+        tmp_evaluate=evaluate(target, output, save_score)
+        print(f"=====>\t{tmp_evaluate}")
+    print("\t§§ the Model has been saved §§")
+    torch.save(model, f"model_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.pt")

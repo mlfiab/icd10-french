@@ -34,7 +34,7 @@ class CustomDocumentDataset(Dataset):
         self.max_size_dataset = max_size_dataset
         self.truncated = truncated
         self.max_chunk = max_chunk
-        data = data[:100]
+        #data = data[:100]
         self.data = data
         self.text, self.label = data.text.values, data.label.values
         

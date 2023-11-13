@@ -50,7 +50,7 @@ In this work, various architectures has been experimented to tackle the ICD code
 2. Run the following command to train the model.
 
 ```
-    python main.py --train_file data/DATA.csv
+    python main.py --train_file data/DATA.csv --model_type laat
 ```
 
 ### Notes
