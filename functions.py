@@ -171,7 +171,7 @@ def text_mining(df):
     return df
 
 def retrieve_k_common_icd(dataframe, K, strategy='most'):
-    CODES_LABELS = list(dataframe["codes"])
+    CODES_LABELS = list(dataframe["CIM10"])
     CODES_LABELS = tranform_list_string(CODES_LABELS)
     CODES = retrieve_all_codes(CODES_LABELS)
     codes_count = Counter(CODES)

@@ -37,16 +37,20 @@ if __name__ == '__main__':
     try:
         # K Top/Last common ICD-10
         K = int(sys.argv[1])
+        print(K)
         unique_icd_10_list = retrieve_k_common_icd(data, K, strategy='most')
         # Transform codes matrix binary classification
 
         # Replace all extra codes by other tag
         dataset_icd_10_labels, unique_icd_10_list = replace_no_common_tag(dataset_icd_10_labels, unique_icd_10_list)
     except Exception as e :
+        print("Mode", K)
+        print(e)
         pass
 
     labels = transform_label(unique_icd_10_list, dataset_icd_10_labels)
     nb_classes = len(labels[1])
+    print("LABELS : => ", nb_classes)
     
     data["label"] = labels
 
@@ -56,7 +60,7 @@ if __name__ == '__main__':
     data = data[data['text'].notnull()]
 
     TRAIN_BATCH_SIZE=4
-    EPOCH=5 #[5,10,20,30]
+    EPOCH=2 #[5,10,20,30]
     validation_split = .2
     shuffle_dataset = True
     random_seed= 42
