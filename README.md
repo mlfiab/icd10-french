@@ -37,6 +37,12 @@ We assume that the dataset contain the columns : 'text' & 'CIM10'
 1. Column 'text': Input data containing text medical data 
 2. Column 'CIM10': ICD codes list
 e.g: ['E86', 'J100', 'E8708', 'J90']
+
+## Architectures
+In this work, various architectures has been experimented to tackle the ICD code association challenge with 2 pretrained french models: FlauBERT & CamemBERT
+1. Truncated BERT: Finetuning bert models by truncating 512 tokens of the input data
+2. Max/Mean pooling: Finetuning bert models with long sequence processing 
+3. BERT + LAAT: Finetuning bert models with Label-Aware ATtention mechanism
 ## How to run
 
 ### Training
@@ -44,7 +50,7 @@ e.g: ['E86', 'J100', 'E8708', 'J90']
 2. Run the following command to train the model.
 
 ```
-    python3 main.py 
+    python main.py --train_file data/DATA.csv
 ```
 
 ### Notes

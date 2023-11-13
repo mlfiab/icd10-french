@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 from torch.utils.data.sampler import SubsetRandomSampler
 from transformers import get_linear_schedule_with_warmup
-
+import argparse
 import time
 import sys
 
@@ -17,17 +17,43 @@ from dataset import *
 def read_data(path_file) : 
     df = pd.read_csv(path_file, sep=';')
     return df
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
+  
+    parser.add_argument(
+        "--train_file", type=str, default=None, help="A csv file containing the training data."
+    )
+
+    parser.add_argument(
+        "--most_code",
+        type=int,
+        help="All codes or the most frequent system",
+        default=None, 
+    )
+    
+    # parser.add_argument(
+    # "--model",
+    # type=str,
+    # help="The type of model",
+    # required=True,
+    # choices=["bert", "roberta", "longformer"]
+    # )
+    
+    args = parser.parse_args()
+    return args
+
 if __name__ == '__main__':
 
     # label_task = int(sys.argv[1])
     # loss_strategy = str(sys.argv[2])
     #ARCHITECTURE = Flaubert or Camembert
     # lr = float(sys.argv[3])
-    K = 0
-    
-    path_file = 'data/DATA.csv' # we suppose DATA.csv file in data folder
+    #K = 0
+    args = parse_args()
+    #path_file = 'data/DATA.csv' # we suppose DATA.csv file in data folder
     #Dataset HNFC preprocessing -----
-    data = read_data(path_file)
+    data = read_data(args.train_file)
     classes = retrieve_classes(data)
     unique_icd_10_list = classes
     
@@ -36,7 +62,7 @@ if __name__ == '__main__':
     # classes_in_family = group_cim_10_family(classes)
     try:
         # K Top/Last common ICD-10
-        K = int(sys.argv[1])
+        K = args.mode
         print(K)
         unique_icd_10_list = retrieve_k_common_icd(data, K, strategy='most')
         # Transform codes matrix binary classification
@@ -44,9 +70,7 @@ if __name__ == '__main__':
         # Replace all extra codes by other tag
         dataset_icd_10_labels, unique_icd_10_list = replace_no_common_tag(dataset_icd_10_labels, unique_icd_10_list)
     except Exception as e :
-        print("Mode", K)
         print(e)
-        pass
 
     labels = transform_label(unique_icd_10_list, dataset_icd_10_labels)
     nb_classes = len(labels[1])
