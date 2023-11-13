@@ -1,5 +1,5 @@
 # Automatic ICD-10 code classification system in French
-- [Paper](https://doi.ieeecomputersociety.org/10.1109/CBMS58004.2023.00198)
+- [Automatic ICD-10 Code Association: A Challenging Task on French Clinical Texts](https://doi.ieeecomputersociety.org/10.1109/CBMS58004.2023.00198)
 
 ![image](https://github.com/mlfiab/icd10-french/blob/main/global-architecture.png)
 
@@ -26,7 +26,7 @@ Please cite the following paper:
 
 
 ## Requirements
-* Python >= 3.6 (via anaconda recommanded)
+* Python >= 3.6 (recommended via anaconda)
 * Install the required Python packages with `pip install -r requirements.txt`
 * If the specific versions could not be found in your distribution, you could simple remove the version constraint. Our code should work with most versions.
 
