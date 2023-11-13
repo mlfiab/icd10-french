@@ -199,8 +199,8 @@ if __name__ == '__main__':
 
         
             print(f"==> evaluation : avg_loss = {np.mean(val_losses_tmp):.2f}, time : {time.time()-t1:.2f} sec\n")
-            save_score = f"MODELS/{arch}/model__epoch{epoch+1}_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.txt" 
+            #save_score = f"model__epoch{epoch+1}_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.txt" 
             tmp_evaluate=evaluate(target, output, save_score)
             print(f"=====>\t{tmp_evaluate}")
         print("\t§§ the Model has been saved §§")
-        torch.save(model, f"MODELS/{arch}/model_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.pt")
+        torch.save(model, f"model_maxlen{MAX_LEN}_lr{lr}_batch{TRAIN_BATCH_SIZE}_.pt")
